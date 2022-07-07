@@ -1,5 +1,7 @@
 from sklearn.metrics import fbeta_score, precision_score, recall_score
 from sklearn.ensemble import GradientBoostingClassifier as gbm
+from .data import process_data
+import pandas as pd
 
 
 # Optional: implement hyperparameter tuning.
@@ -64,3 +66,14 @@ def inference(model, X):
     return preds
 
 
+def compute_slice_metrics(df,cat_features,model,encoder,lb):
+    output = []
+    for column in df.columns:
+        for val in df[column].unique():
+            df_slice = df[df[column] == val]
+            X, y, _, _ = process_data(df_slice, categorical_features=cat_features, label="salary", training=False, encoder=encoder, lb=lb)
+            preds = inference(model,X)
+            precision, recall, fbeta = compute_model_metrics(y,preds)
+            output.append([column, val, precision, recall, fbeta])
+    slice_output = pd.DataFrame(output, columns=['column', 'value', 'precision', 'recall', 'fbeta'])
+    slice_output.to_csv('slice_output.txt', index=False)
