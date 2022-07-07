@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 # Add the necessary imports for the starter code.
 
 import pandas as pd
-from base import data
+from base.data import process_data
 from base import model
 import pickle
 
@@ -47,8 +47,8 @@ with open('../model/lb.pkl', 'wb') as f:
     pickle.dump(lb, f)
 
 #train and test inference
-train_preds = model.inference(output_model, X_test)
-test_preds = model.inference(output_model, X_train)
+train_preds = model.inference(output_model, X_train)
+test_preds = model.inference(output_model, X_test)
 
 #model metrics 
 precision, recall, fbeta = model.compute_model_metrics(y_test,test_preds)
