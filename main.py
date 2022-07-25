@@ -2,8 +2,11 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from model_train.base import model
+from model_train.base.data import process_data
+import pandas as pd
+import pickle
 
-class InputDate(BaseModel):
+class InputData(BaseModel):
     age: float
     workclass: str
     fnlgt: float
@@ -48,17 +51,29 @@ async def welcome():
 
 @app.post("/predict")
 async def predict(data: InputData):
-    input = jsonable_encoder(data)
+    ##input = jsonable_encoder(data)
+    ##df = pd.DataFrame(input, index=[0])
+    input = {k: v for k, v in data.dict().items()}
     df = pd.DataFrame(input, index=[0])
 
-    with open('model/model.pkl', 'rb') as f:
+    cat_features = [
+        "workclass",
+        "education",
+        "marital_status",
+        "occupation",
+        "relationship",
+        "race",
+        "sex",
+        "native_country"]
+
+    with open('../model/model.pkl', 'rb') as f:
         output_model = pickle.load(f)
     with open('../model/encoder.pkl', 'rb') as f:
         encoder = pickle.load(f)
     with open('../model/lb.pkl', 'rb') as f:
         lb = pickle.load(f)
 
-    X_test, y_test, _, _ = process_data(test, categorical_features=cat_features, label="salary", training=False, encoder=encoder, lb=lb)
+    X_test, y_test, _, _ = process_data(df, categorical_features=cat_features, label=None, training=False, encoder=encoder, lb=lb)
 
     predictions = model.inference(output_model, X_test)
     return predictions
