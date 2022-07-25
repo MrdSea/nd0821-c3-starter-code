@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from model_train.base import model
 from model_train.base.data import process_data
 import pandas as pd
@@ -11,16 +11,16 @@ class InputData(BaseModel):
     workclass: str
     fnlgt: float
     education: str
-    education_num: float
-    marital_status: str
+    education_num: float = Field(alias='education-num')
+    marital_status: str = Field(alias='marital-status')
     occupation: str
     relationship: str
     race: str
     sex: str
-    capital_gain: float
-    capital_loss: float
-    hours_per_week: float
-    native_country: str
+    capital_gain: float = Field(alias='capital-gain')
+    capital_loss: float = Field(alias='capital-loss')
+    hours_per_week: float = Field(alias='hours-per-week')
+    native_country: str = Field(alias='native-country')
 
     class Config:
         schema_extra = {
@@ -29,16 +29,16 @@ class InputData(BaseModel):
                 "workclass": "State-gov",
                 "fnlgt": 77516,
                 "education": "Bachelors",
-                "education_num": 13,
-                "marital_status": "Never-married",
+                "education-num": 13,
+                "marital-status": "Never-married",
                 "occupation": "Adm-clerical",
                 "relationship": "Not-in-family",
                 "race": "White",
                 "sex": "Male",
-                "capital_gain": 2174,
-                "capital_loss": 0,
-                "hours_per_week": 40,
-                "native_country": "United-States",
+                "capital-gain": 2174,
+                "capital-loss": 0,
+                "hours-per-week": 40,
+                "native-country": "United-States",
             }
         }
 
@@ -51,20 +51,18 @@ async def welcome():
 
 @app.post("/predict")
 async def predict(data: InputData):
-    ##input = jsonable_encoder(data)
-    ##df = pd.DataFrame(input, index=[0])
-    input = {k: v for k, v in data.dict().items()}
+    input = jsonable_encoder(data)
     df = pd.DataFrame(input, index=[0])
 
     cat_features = [
         "workclass",
         "education",
-        "marital_status",
+        "marital-status",
         "occupation",
         "relationship",
         "race",
         "sex",
-        "native_country"]
+        "native-country"]
 
     with open('../model/model.pkl', 'rb') as f:
         output_model = pickle.load(f)
@@ -76,4 +74,4 @@ async def predict(data: InputData):
     X_test, y_test, _, _ = process_data(df, categorical_features=cat_features, label=None, training=False, encoder=encoder, lb=lb)
 
     predictions = model.inference(output_model, X_test)
-    return predictions
+    return str(predictions[0])
